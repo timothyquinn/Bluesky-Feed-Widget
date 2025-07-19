@@ -12,18 +12,18 @@
 
 		// configure
 			$config = [
-				'account_handle' =>		$account_handle, // e.g. georgetakei.bsky.social
-				'app_password' =>		$app_password, // obtain app password here: https://bsky.app/settings/app-passwords
-				'target_username' =>	(@$params['target_username'] ? $params['target_username'] : $account_handle),
-				'max_posts' =>			(@$params['max_posts'] ? $params['max_posts'] : 100), // must be integer from 1 to 100
-				'date_time_format' =>	(@$params['date_time_format'] ? $params['date_time_format'] : 'M j, Y'),
-				'display_stats' =>		(@$params['display_stats'] ? true : false),
-				'filter' =>				(@$params['filter'] ? $params['filter'] : 'posts_no_replies'), // see Bluesky documentation for options
-				'return_html' =>		(@$params['return_html'] ? true : false) // employs Bootstrap (4.x)
+				'account_handle' => $account_handle, // e.g. georgetakei.bsky.social
+				'app_password' => $app_password, // obtain app password here: https://bsky.app/settings/app-passwords
+				'target_username' => (@$params['target_username'] ? $params['target_username'] : $account_handle),
+				'max_posts' => (@$params['max_posts'] ? $params['max_posts'] : 100), // must be integer from 1 to 100
+				'date_time_format' => (@$params['date_time_format'] ? $params['date_time_format'] : 'M j, Y'),
+				'display_stats' => (@$params['display_stats'] ? true : false),
+				'filter' => (@$params['filter'] ? $params['filter'] : 'posts_no_replies'), // see Bluesky documentation for options
+				'return_html' => (@$params['return_html'] ? true : false) // employs Bootstrap (4.x)
 			];
 
-			if ($config['return_html'])	$output = null;
-			else						$output = [];
+			if ($config['return_html']) $output = null;
+			else $output = [];
 
 		// obtain session token
 			$postdata = [
@@ -35,17 +35,17 @@
 			curl_setopt_array(
 				$curl,
 				[
-					CURLOPT_URL =>				'https://bsky.social/xrpc/com.atproto.server.createSession',
-					CURLOPT_SSL_VERIFYPEER =>	false,
-					CURLOPT_RETURNTRANSFER =>	true,
-					CURLOPT_ENCODING =>			'',
-					CURLOPT_FOLLOWLOCATION =>	true,
-					CURLOPT_MAXREDIRS =>		10,
-					CURLOPT_TIMEOUT =>			0,
-					CURLOPT_HTTP_VERSION =>		CURL_HTTP_VERSION_1_1,
-					CURLOPT_CUSTOMREQUEST =>	'POST',
-					CURLOPT_POSTFIELDS =>		json_encode($postdata),
-					CURLOPT_HTTPHEADER =>		['Content-Type: application/json']
+					CURLOPT_URL => 'https://bsky.social/xrpc/com.atproto.server.createSession',
+					CURLOPT_SSL_VERIFYPEER => false,
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_ENCODING => '',
+					CURLOPT_FOLLOWLOCATION => true,
+					CURLOPT_MAXREDIRS => 10,
+					CURLOPT_TIMEOUT => 0,
+					CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+					CURLOPT_CUSTOMREQUEST => 'POST',
+					CURLOPT_POSTFIELDS => json_encode($postdata),
+					CURLOPT_HTTPHEADER => ['Content-Type: application/json']
 				]
 			);
 			$response = curl_exec($curl);
@@ -59,19 +59,19 @@
 				curl_setopt_array(
 					$curl,
 					[
-						CURLOPT_URL =>					'https://bsky.social/xrpc/app.bsky.feed.getAuthorFeed?actor=' . $config['target_username'] . '&limit=' . $config['max_posts'] . '&filter=' . $config['max_posts'],
-						CURLOPT_SSL_VERIFYPEER =>		false,
-						CURLOPT_RETURNTRANSFER =>		true,
-						CURLOPT_ENCODING =>				'',
-						CURLOPT_FOLLOWLOCATION =>		true,
-						CURLOPT_MAXREDIRS =>			10,
-						CURLOPT_TIMEOUT =>				0,
-						CURLOPT_HTTP_VERSION =>			CURL_HTTP_VERSION_1_1,
-						CURLOPT_CUSTOMREQUEST =>		'GET',
-						CURLOPT_HTTPHEADER =>			[
-															'Content-Type: application/json',
-															'Authorization: Bearer ' . $session['accessJwt']
-														]
+						CURLOPT_URL => 'https://bsky.social/xrpc/app.bsky.feed.getAuthorFeed?actor=' . $config['target_username'] . '&limit=' . $config['max_posts'] . '&filter=' . $config['max_posts'],
+						CURLOPT_SSL_VERIFYPEER => false,
+						CURLOPT_RETURNTRANSFER => true,
+						CURLOPT_ENCODING => '',
+						CURLOPT_FOLLOWLOCATION => true,
+						CURLOPT_MAXREDIRS => 10,
+						CURLOPT_TIMEOUT => 0,
+						CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+						CURLOPT_CUSTOMREQUEST => 'GET',
+						CURLOPT_HTTPHEADER => [
+							'Content-Type: application/json',
+							'Authorization: Bearer ' . $session['accessJwt']
+						]
 					]
 				);
 				$response = curl_exec($curl);
@@ -153,6 +153,13 @@
 													$length = $link['index']['byteEnd'] - $link['index']['byteStart'];
 													$replace_this = substr($item['post']['record']['text'], $link['index']['byteStart'], $length);
 													$replace[$replace_this] = "<a href='" . $uri . "' target='_blank'>#" . $link['features'][0]['tag'] . "</a>";
+											}
+											elseif($link['features'][0]['$type'] == 'app.bsky.richtext.facet#mention') {
+												// hashtag
+													$uri = "https://bsky.app/profile/" . $link['features'][0]['did'];
+													$length = $link['index']['byteEnd'] - $link['index']['byteStart'];
+													$replace_this = substr($item['post']['record']['text'], $link['index']['byteStart'], $length);
+													$replace[$replace_this] = "<a href='" . $uri . "' target='_blank'>" . $replace_this . "</a>";
 											}
 											elseif($link['features'][0]['$type'] == 'app.bsky.richtext.facet#link') {
 												// url
